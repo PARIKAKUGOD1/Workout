@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Amit Hub">
     <meta name="theme-color" content="#000000">
     <title>Amit Protocol</title>
     
+    <!-- Premium App Icons -->
+    <link rel="apple-touch-icon" sizes="512x512" href="https://ui-avatars.com/api/?name=A+P&background=050505&color=0A84FF&size=512&font-size=0.33&bold=true">
+    <link rel="icon" type="image/png" sizes="64x64" href="https://ui-avatars.com/api/?name=A+P&background=050505&color=0A84FF&size=64&font-size=0.33&bold=true">
+
     <!-- Load React & Tailwind -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -406,7 +412,54 @@
             const formatTime = (secs) => `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
             const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 
-            // --- UI: BOOT SCREEN ---
+            // --- RENDER FUNCTIONS (Keeps root clean to prevent CSS fixed/transform bugs) ---
+            
+            const renderDynamicIsland = () => {
+                if (!timerState.active) return null;
+                // RENDERED AT THE ABSOLUTE ROOT. NEVER SCROLLS.
+                if (timerState.minimized) {
+                    return (
+                        <div onClick={toggleTimerMinimize} className="fixed top-3 left-1/2 -translate-x-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active:scale-95 transition-all animate-slide-down">
+                            <Clock size={16} className="text-[#0A84FF] animate-pulse" />
+                            <span className="font-mono font-bold text-sm tracking-widest">{formatTime(timeLeft)}</span>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="fixed top-3 left-1/2 -translate-x-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island">
+                        <div className="w-full flex justify-between items-center mb-4">
+                            <button onClick={skipTimer} className="text-[#8e8e93] hover:text-[#ff453a] p-3 bg-white/5 rounded-full transition-colors active:scale-90"><X size={18} /></button>
+                            <h3 className="text-[#0A84FF] text-[11px] font-bold uppercase tracking-[0.2em]">{timerState.label}</h3>
+                            <button onClick={toggleTimerMinimize} className="text-[#8e8e93] hover:text-white p-3 bg-white/5 rounded-full transition-colors active:scale-90"><Minimize2 size={18} /></button>
+                        </div>
+                        <div className="text-[72px] font-black tracking-tighter mb-6 font-mono text-white leading-none drop-shadow-[0_0_15px_rgba(10,132,255,0.3)]">{formatTime(timeLeft)}</div>
+                        <div className="flex space-x-3 w-full">
+                            <button onClick={() => adjustTimer(-10)} className="flex-1 bg-black active:bg-[#222] py-4 rounded-[20px] font-bold text-sm text-[#8e8e93] border border-white/10">-10s</button>
+                            <button onClick={() => adjustTimer(30)} className="flex-1 bg-black active:bg-[#222] py-4 rounded-[20px] font-bold text-sm text-[#8e8e93] border border-white/10">+30s</button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderAbortModal = () => {
+                if (!showAbortModal) return null;
+                return (
+                    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[999] flex items-center justify-center p-6 animate-fade-in">
+                        <div className="bg-[#111] border border-[#ff453a]/30 p-6 rounded-[32px] w-full max-w-sm shadow-[0_0_40px_rgba(255,69,58,0.2)] animate-zoom-in-modal">
+                            <div className="w-16 h-16 rounded-full bg-[#ff453a]/10 flex items-center justify-center mb-4 mx-auto border border-[#ff453a]/20">
+                                <X size={32} className="text-[#ff453a]" />
+                            </div>
+                            <h2 className="text-xl font-black text-center text-white mb-2 tracking-tight">ABORT PROTOCOL?</h2>
+                            <p className="text-[#8e8e93] text-[13px] text-center mb-8 font-medium">Are you sure you want to terminate the current session? All unsaved tracking data will be lost.</p>
+                            <div className="flex gap-3">
+                                <button onClick={() => { AudioEngine.tap(); setShowAbortModal(false); }} className="flex-1 bg-[#222] py-4 rounded-[20px] font-bold text-sm text-white active:scale-95 transition-all">Cancel</button>
+                                <button onClick={() => { setShowAbortModal(false); endWorkout(); }} className="flex-1 bg-[#ff453a]/20 py-4 rounded-[20px] font-bold text-sm text-[#ff453a] border border-[#ff453a]/30 active:scale-95 transition-all">Terminate</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
             const renderBootScreen = () => (
                 <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden" onClick={handleBoot}>
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
@@ -425,7 +478,6 @@
                 </div>
             );
 
-            // --- UI: DASHBOARD ---
             const renderDashboard = () => {
                 const todayPlan = WORKOUT_PLAN.find(w => w.day === Number(appState.selectedDay)) || WORKOUT_PLAN[0];
                 return (
@@ -533,7 +585,6 @@
                 );
             };
 
-            // --- UI: WORKOUT LIST ---
             const renderWorkoutList = () => {
                 let totalSets = 0; let completedSets = 0;
                 appState.activeWorkout.exercises.forEach(ex => { totalSets += ex.sets; for(let i=0; i<ex.sets; i++) { if(appState.setLogs[ex.id]?.[i]?.completed) completedSets++; } });
@@ -581,7 +632,6 @@
                             })}
                         </div>
                         
-                        {/* Complete Session Button */}
                         <div className="px-6 pb-12 mt-8 animate-fade-in-up">
                             <button onClick={() => { AudioEngine.success(); endWorkout(); }} className="w-full bg-[#0A84FF] text-white font-black text-[13px] uppercase tracking-[0.2em] py-5 rounded-[24px] flex items-center justify-center shadow-[0_10px_40px_rgba(10,132,255,0.4)] active:scale-95 transition-all">
                                 <CheckCircle size={18} className="mr-2" /> Complete Session
@@ -591,7 +641,6 @@
                 );
             };
 
-            // --- UI: FOCUS MODE ---
             const renderFocusMode = () => {
                 if (typeof appState.focusedExercise !== 'number' || !appState.activeWorkout.exercises[appState.focusedExercise]) return null;
                 const ex = appState.activeWorkout.exercises[appState.focusedExercise];
@@ -668,49 +717,15 @@
             };
 
             // --- MASTER RENDER TREE ---
-            // Rendering modals and island at the ABSOLUTE ROOT to prevent scrolling/offset bugs.
+            // Render modals and island at the ABSOLUTE ROOT to prevent scrolling/offset bugs.
             return (
                 <div className="relative w-full min-h-screen bg-black text-white selection:bg-[#0A84FF]/30">
                     
                     {/* GLOBAL ROOT: DYNAMIC ISLAND */}
-                    {timerState.active && (
-                        timerState.minimized ? (
-                            <div onClick={toggleTimerMinimize} className="fixed top-3 left-1/2 -translate-x-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active:scale-95 transition-all animate-slide-down">
-                                <Clock size={16} className="text-[#0A84FF] animate-pulse" />
-                                <span className="font-mono font-bold text-sm tracking-widest">{formatTime(timeLeft)}</span>
-                            </div>
-                        ) : (
-                            <div className="fixed top-3 left-1/2 -translate-x-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island">
-                                <div className="w-full flex justify-between items-center mb-4">
-                                    <button onClick={skipTimer} className="text-[#8e8e93] hover:text-[#ff453a] p-3 bg-white/5 rounded-full transition-colors active:scale-90"><X size={18} /></button>
-                                    <h3 className="text-[#0A84FF] text-[11px] font-bold uppercase tracking-[0.2em]">{timerState.label}</h3>
-                                    <button onClick={toggleTimerMinimize} className="text-[#8e8e93] hover:text-white p-3 bg-white/5 rounded-full transition-colors active:scale-90"><Minimize2 size={18} /></button>
-                                </div>
-                                <div className="text-[72px] font-black tracking-tighter mb-6 font-mono text-white leading-none drop-shadow-[0_0_15px_rgba(10,132,255,0.3)]">{formatTime(timeLeft)}</div>
-                                <div className="flex space-x-3 w-full">
-                                    <button onClick={() => adjustTimer(-10)} className="flex-1 bg-black active:bg-[#222] py-4 rounded-[20px] font-bold text-sm text-[#8e8e93] border border-white/10">-10s</button>
-                                    <button onClick={() => adjustTimer(30)} className="flex-1 bg-black active:bg-[#222] py-4 rounded-[20px] font-bold text-sm text-[#8e8e93] border border-white/10">+30s</button>
-                                </div>
-                            </div>
-                        )
-                    )}
+                    {renderDynamicIsland()}
 
                     {/* GLOBAL ROOT: ABORT MODAL */}
-                    {showAbortModal && (
-                        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[999] flex items-center justify-center p-6 animate-fade-in">
-                            <div className="bg-[#111] border border-[#ff453a]/30 p-6 rounded-[32px] w-full max-w-sm shadow-[0_0_40px_rgba(255,69,58,0.2)] animate-zoom-in-modal">
-                                <div className="w-16 h-16 rounded-full bg-[#ff453a]/10 flex items-center justify-center mb-4 mx-auto border border-[#ff453a]/20">
-                                    <X size={32} className="text-[#ff453a]" />
-                                </div>
-                                <h2 className="text-xl font-black text-center text-white mb-2 tracking-tight">ABORT PROTOCOL?</h2>
-                                <p className="text-[#8e8e93] text-[13px] text-center mb-8 font-medium">Are you sure you want to terminate the current session? All unsaved tracking data will be lost.</p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => { AudioEngine.tap(); setShowAbortModal(false); }} className="flex-1 bg-[#222] py-4 rounded-[20px] font-bold text-sm text-white active:scale-95 transition-all">Cancel</button>
-                                    <button onClick={() => { setShowAbortModal(false); endWorkout(); }} className="flex-1 bg-[#ff453a]/20 py-4 rounded-[20px] font-bold text-sm text-[#ff453a] border border-[#ff453a]/30 active:scale-95 transition-all">Terminate</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {renderAbortModal()}
 
                     {/* MAIN APPLICATION ROUTING */}
                     {bootState !== 'online' ? renderBootScreen() : (
