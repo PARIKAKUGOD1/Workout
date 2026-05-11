@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,11 +10,14 @@
     <meta name="theme-color" content="#000000">
     <title>Amit Protocol</title>
     
+    <!-- PWA Manifest Link -->
     <link rel="manifest" href="./manifest.json">
 
-    <link rel="apple-touch-icon" sizes="512x512" href="https://ui-avatars.com/api/?name=A+P&background=050505&color=0A84FF&size=512&font-size=0.33&bold=true">
-    <link rel="icon" type="image/png" sizes="64x64" href="https://ui-avatars.com/api/?name=A+P&background=050505&color=0A84FF&size=64&font-size=0.33&bold=true">
+    <!-- Premium App Icons (FIXED FOR PWABUILDER) -->
+    <link rel="apple-touch-icon" sizes="512x512" href="./icon.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
 
+    <!-- Load React & Tailwind -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -46,6 +50,7 @@
     </style>
 </head>
 <body>
+    <!-- Emergency HTML Fallback -->
     <div id="root">
         <div style="display:flex; height:100vh; width:100vw; background:#000; color:#fff; align-items:center; justify-content:center; flex-direction:column; font-family:sans-serif; text-align:center; padding:20px;">
             <h2 style="color:#0A84FF; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px;">System Booting...</h2>
@@ -141,12 +146,13 @@
                 } catch(e) {}
             },
             timerFinish() {
-                this.playNote(783.99, 0, 0.5, 'sine', 0.15); 
-                this.playNote(1046.50, 0.2, 0.8, 'sine', 0.15); 
+                this.playNote(783.99, 0, 0.5, 'sine', 0.15); // G5
+                this.playNote(1046.50, 0.2, 0.8, 'sine', 0.15); // C6
                 if ('vibrate' in navigator) navigator.vibrate([150, 50, 150]);
             }
         };
 
+        // --- ICONS ---
         const Icon = ({ d, points, rects, circles, lines, polylines, size=24, className="", style={} }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
                 {d && <path d={d} />} {points && <polygon points={points} />}
@@ -197,14 +203,14 @@
 
             if (timerState.minimized) {
                 return (
-                    <div onClick={toggleTimerMinimize} className="hw-accel fixed top-3 left-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active-press transition-all animate-slide-down" style={{ transform: 'translateX(-50%)' }}>
+                    <div onClick={toggleTimerMinimize} className="hw-accel fixed top-3 left-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active-press transition-all animate-slide-down" style={{ transform: 'translateX(-50%) translateZ(0)' }}>
                         <Clock size={16} className="text-[#0A84FF] animate-pulse" />
                         <span className="font-mono font-bold text-sm tracking-widest">{formatTime(timeLeft)}</span>
                     </div>
                 );
             }
             return (
-                <div className="hw-accel fixed top-3 left-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island" style={{ transform: 'translateX(-50%)' }}>
+                <div className="hw-accel fixed top-3 left-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island" style={{ transform: 'translateX(-50%) translateZ(0)' }}>
                     <div className="w-full flex justify-between items-center mb-4">
                         <button onClick={skipTimer} className="text-[#8e8e93] hover:text-[#ff453a] p-3 bg-white/5 rounded-full transition-colors active-press"><X size={18} /></button>
                         <h3 className="text-[#0A84FF] text-[11px] font-bold uppercase tracking-[0.2em]">{timerState.label}</h3>
@@ -433,7 +439,7 @@
             const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 
             const renderBootScreen = () => (
-                <div className="min-h-screen bg-black flex flex-col items-center justify-center relative z-50" onClick={handleBoot}>
+                <div className="hw-accel min-h-screen bg-black flex flex-col items-center justify-center relative z-50" onClick={handleBoot}>
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                     <div className={`flex flex-col items-center transition-all duration-1000 ${bootState === 'booting' ? 'scale-150 opacity-0 blur-md' : 'opacity-100'}`}>
                         <div className="w-24 h-24 rounded-full border border-[#0A84FF]/30 flex items-center justify-center mb-8 relative">
@@ -454,7 +460,7 @@
             const renderDashboard = () => {
                 const todayPlan = WORKOUT_PLAN.find(w => w.day === Number(appState.selectedDay)) || WORKOUT_PLAN[0];
                 return (
-                    <div className="w-full min-h-screen pb-24 relative animate-fade-in">
+                    <div className="hw-accel w-full min-h-screen pb-24 relative animate-fade-in">
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-[0.15]"></div>
                         
                         <div className="pt-16 pb-6 px-6 relative z-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
@@ -565,7 +571,7 @@
                 const progressPercent = totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
 
                 return (
-                    <div className="w-full min-h-screen pb-40 bg-black animate-fade-in">
+                    <div className="hw-accel w-full min-h-screen pb-40 bg-black animate-fade-in">
                         <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/10 pt-14 pb-4 px-6 flex flex-col gap-4">
                             <div className="flex justify-between items-center">
                                 <div>
@@ -621,7 +627,7 @@
                 const exerciseLogs = appState.setLogs[ex.id] || {};
                 
                 return (
-                    <div className="fixed inset-0 bg-black z-[60] overflow-y-auto animate-slide-up-full pb-40">
+                    <div className="hw-accel fixed inset-0 bg-black z-[60] overflow-y-auto animate-slide-up-full pb-40">
                         <div className="sticky top-0 bg-black/90 backdrop-blur-xl z-[70] border-b border-white/10 px-6 pt-14 pb-4 flex justify-between items-center">
                             <div>
                                 <p className="text-[#8e8e93] text-[10px] font-mono tracking-[0.2em] uppercase mb-1">
@@ -690,11 +696,9 @@
                 );
             };
 
-            // --- MASTER RENDER TREE ---
             return (
                 <ErrorBoundary>
                     <div className="relative w-full min-h-screen bg-black text-white selection:bg-[#0A84FF]/30">
-                        {/* GLOBAL OVERLAYS */}
                         <DynamicIslandTimer timerState={timerState} skipTimer={skipTimer} toggleTimerMinimize={toggleTimerMinimize} adjustTimer={adjustTimer} />
                         
                         {showAbortModal && (
@@ -713,7 +717,6 @@
                             </div>
                         )}
 
-                        {/* ROUTING */}
                         {bootState !== 'online' ? renderBootScreen() : (
                             (appState.currentView === 'dashboard' || !appState.activeWorkout) ? renderDashboard() : (
                                 <>
@@ -732,3 +735,6 @@
     </script>
 </body>
 </html>
+
+
+```
