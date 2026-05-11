@@ -25,14 +25,14 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Optimized Animations (Removed heavy 3D transforms to prevent iOS Black Screen bug)
-        */
-        @keyframes slideDown { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-        @keyframes slideUpFullScreen { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes zoomInIsland { from { transform: translate(-50%, -10px) scale(0.95); opacity: 0; } to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
-        @keyframes zoomInModal { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .hw-accel { transform: translateZ(0); backface-visibility: hidden; perspective: 1000px; will-change: transform, opacity; }
+
+        @keyframes slideDown { from { transform: translate3d(-50%, -30px, 0); opacity: 0; } to { transform: translate3d(-50%, 0, 0); opacity: 1; } }
+        @keyframes slideUpFullScreen { from { transform: translate3d(0, 100%, 0); } to { transform: translate3d(0, 0, 0); } }
+        @keyframes zoomInIsland { from { transform: translate3d(-50%, -10px, 0) scale(0.95); opacity: 0; } to { transform: translate3d(-50%, 0, 0) scale(1); opacity: 1; } }
+        @keyframes zoomInModal { from { transform: translate3d(0, 0, 0) scale(0.95); opacity: 0; } to { transform: translate3d(0, 0, 0) scale(1); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate3d(0, 15px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
         @keyframes pulseOpacity { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         .animate-slide-down { animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
@@ -43,6 +43,10 @@
         .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
         .glow-pulse { animation: pulseOpacity 2.5s infinite ease-in-out; }
         .active-press:active { transform: scale(0.96); transition: transform 0.1s; }
+        
+        /* Safe Area Padding for iOS Notches */
+        .safe-pt { padding-top: max(env(safe-area-inset-top), 20px); }
+        .safe-pb { padding-bottom: max(env(safe-area-inset-bottom), 20px); }
     </style>
 </head>
 <body>
@@ -148,7 +152,6 @@
             }
         };
 
-        // --- ICONS ---
         const Icon = ({ d, points, rects, circles, lines, polylines, size=24, className="", style={} }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
                 {d && <path d={d} />} {points && <polygon points={points} />}
@@ -180,16 +183,13 @@
 
         const formatTime = (secs) => `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
 
-        // --- ISOLATED TIMER COMPONENT ---
+        // --- ISOLATED TIMER COMPONENT (With Safe Area padding) ---
         const DynamicIslandTimer = ({ timerState, skipTimer, toggleTimerMinimize, adjustTimer }) => {
             const [timeLeft, setTimeLeft] = useState(0);
 
             useEffect(() => {
                 if (!timerState.active || !timerState.endTime) return;
-                const updateTime = () => {
-                    const remaining = Math.max(0, Math.round((timerState.endTime - Date.now()) / 1000));
-                    setTimeLeft(remaining);
-                };
+                const updateTime = () => setTimeLeft(Math.max(0, Math.round((timerState.endTime - Date.now()) / 1000)));
                 updateTime();
                 const int = setInterval(updateTime, 1000);
                 return () => clearInterval(int);
@@ -199,14 +199,16 @@
 
             if (timerState.minimized) {
                 return (
-                    <div onClick={toggleTimerMinimize} className="fixed top-3 left-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active-press transition-all animate-slide-down" style={{ transform: 'translateX(-50%)' }}>
+                    <div onClick={toggleTimerMinimize} className="hw-accel fixed left-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active-press transition-all animate-slide-down" 
+                         style={{ transform: 'translateX(-50%) translateZ(0)', top: 'calc(env(safe-area-inset-top, 12px) + 12px)' }}>
                         <Clock size={16} className="text-[#0A84FF] animate-pulse" />
                         <span className="font-mono font-bold text-sm tracking-widest">{formatTime(timeLeft)}</span>
                     </div>
                 );
             }
             return (
-                <div className="fixed top-3 left-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island" style={{ transform: 'translateX(-50%)' }}>
+                <div className="hw-accel fixed left-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island" 
+                     style={{ transform: 'translateX(-50%) translateZ(0)', top: 'calc(env(safe-area-inset-top, 12px) + 12px)' }}>
                     <div className="w-full flex justify-between items-center mb-4">
                         <button onClick={skipTimer} className="text-[#8e8e93] hover:text-[#ff453a] p-3 bg-white/5 rounded-full transition-colors active-press"><X size={18} /></button>
                         <h3 className="text-[#0A84FF] text-[11px] font-bold uppercase tracking-[0.2em]">{timerState.label}</h3>
@@ -221,7 +223,7 @@
             );
         };
 
-        // --- ROOT ERROR BOUNDARY (The Ultimate Safety Net) ---
+        // --- ROOT ERROR BOUNDARY ---
         class ErrorBoundary extends React.Component {
             constructor(props) { super(props); this.state = { hasError: false, errorMsg: '' }; }
             static getDerivedStateFromError(error) { return { hasError: true, errorMsg: error.toString() }; }
@@ -250,84 +252,84 @@
 
         // --- DATA ---
         const ABS_MODULE = [
-          { id: 'abs1', name: 'Heavy Cable Crunches', sets: 5, reps: '15-20', rest: 60, note: 'Treat abs like any other muscle. Use heavy resistance. Curl torso around an imaginary barrel.', cue: 'Squeeze at bottom for 1s' },
+          { id: 'abs1', name: 'Heavy Cable Crunches', sets: 5, reps: '15-20', rest: 60, note: 'Treat abs like any other muscle. Use heavy resistance.', cue: 'Squeeze at bottom for 1s' },
           { id: 'abs2', name: 'Hanging Leg Raises', sets: 4, reps: '15', rest: 60, note: 'V-Taper lower ab builder. Do not swing your body.', cue: 'Control eccentric (3s down)' },
-          { id: 'abs3', name: 'Weighted Planks', sets: 3, reps: '60s', rest: 60, note: 'Core stability foundation. Place a plate on your back if bodyweight is too easy.', cue: 'Keep core tight, no sagging' }
+          { id: 'abs3', name: 'Weighted Planks', sets: 3, reps: '60s', rest: 60, note: 'Core stability foundation. Place a plate on back if easy.', cue: 'Keep core tight, no sagging' }
         ];
 
         const WORKOUT_PLAN = [
           {
-            day: 1, name: 'Monday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Tricep is the secondary mover. Do not ego lift on skull crushers. Focus on the stretch.',
+            day: 1, name: 'Monday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Tricep is secondary mover. Focus on stretch.',
             exercises: [
-              { id: 'm1', name: 'Incline Barbell Bench Press', sets: 5, reps: '8-10', rest: 180, note: 'The primary upper chest mass builder. Explode up.', cue: 'Control the negative (3s)' },
-              { id: 'm2', name: 'Flat Dumbbell Press', sets: 4, reps: '8-12', rest: 120, note: 'Dumbbells allow a deeper stretch. Arch lower back slightly.', cue: 'Deep stretch at bottom' },
-              { id: 'm3', name: 'Decline Dumbbell Press', sets: 4, reps: '10-12', rest: 120, note: 'Builds the lower pec line. Safe to push to absolute failure.', cue: 'Push to failure' },
-              { id: 'm4', name: 'Cable Flyes (Low-to-High)', sets: 4, reps: '15', rest: 90, note: 'Constant tension isolation for the upper fibers.', cue: 'Squeeze & hold top for 1s' },
-              { id: 'm5', name: 'Dumbbell Skull Crushers', sets: 4, reps: '10-12', rest: 90, note: 'Use light DBs with a neutral grip. Safe on elbow tendons.', cue: 'Stretch behind the ears' },
-              { id: 'm6', name: 'Rope Tricep Pushdowns', sets: 5, reps: '12-15', rest: 60, note: 'Pull the rope apart at the very bottom.', cue: 'Drop-set the final set' },
-              { id: 'm7', name: 'Overhead Cable Extension', sets: 4, reps: '12-15', rest: 60, note: 'Targets the long head through maximum stretching.', cue: 'Keep elbows tucked' }
+              { id: 'm1', name: 'Incline Barbell Bench', sets: 5, reps: '8-10', rest: 180, note: 'Primary upper chest mass builder.', cue: 'Control negative (3s)' },
+              { id: 'm2', name: 'Flat Dumbbell Press', sets: 4, reps: '8-12', rest: 120, note: 'Dumbbells allow deeper stretch.', cue: 'Deep stretch at bottom' },
+              { id: 'm3', name: 'Decline DB Press', sets: 4, reps: '10-12', rest: 120, note: 'Builds lower pec line.', cue: 'Push to failure' },
+              { id: 'm4', name: 'Cable Flyes (Low-to-High)', sets: 4, reps: '15', rest: 90, note: 'Isolation for upper fibers.', cue: 'Squeeze & hold top 1s' },
+              { id: 'm5', name: 'DB Skull Crushers', sets: 4, reps: '10-12', rest: 90, note: 'Use light DBs neutral grip.', cue: 'Stretch behind ears' },
+              { id: 'm6', name: 'Rope Pushdowns', sets: 5, reps: '12-15', rest: 60, note: 'Pull rope apart at bottom.', cue: 'Drop-set final set' },
+              { id: 'm7', name: 'Overhead Extension', sets: 4, reps: '12-15', rest: 60, note: 'Targets long head through stretch.', cue: 'Keep elbows tucked' }
             ]
           },
           {
-            day: 2, name: 'Tuesday', focus: 'Back & Arms', type: 'Pull Block', tip: 'A wide back shrinks the waist. Pull with your elbows to fully engage lats.',
+            day: 2, name: 'Tuesday', focus: 'Back & Arms', type: 'Pull Block', tip: 'A wide back shrinks waist. Pull with elbows.',
             exercises: [
-              { id: 't1', name: 'Deadlift', sets: 5, reps: '5-8', rest: 240, note: 'Heavy foundational thickness. Brace core ruthlessly.', cue: 'Brace core tight' },
-              { id: 't2', name: 'Weighted Pull-Ups', sets: 5, reps: '8-10', rest: 180, note: 'The ultimate V-Taper builder. Pull chest to bar.', cue: 'Full dead-hang at bottom' },
-              { id: 't3', name: 'Seated Cable Rows', sets: 4, reps: '10-12', rest: 120, note: 'Keep torso stationary. Retract scapula first, then pull.', cue: 'Squeeze shoulder blades' },
-              { id: 't4', name: 'Lat Pulldowns', sets: 4, reps: '12', rest: 120, note: 'Focus on the stretch at the top to build lat width.', cue: 'Slow eccentric (3s up)' },
-              { id: 't5', name: 'Barbell Bicep Curls', sets: 5, reps: '8-10', rest: 90, note: 'Strict form mass builder. Do not swing your lower back.', cue: 'Keep elbows pinned' },
-              { id: 't6', name: 'Dumbbell Hammer Curls', sets: 4, reps: '12', rest: 60, note: 'Targets the brachialis to make the arms wider from the front.', cue: 'Control the swing' },
-              { id: 't7', name: 'Reverse Barbell Curls', sets: 4, reps: '15', rest: 60, note: 'Builds the upper forearm.', cue: 'Constant tension' },
-              { id: 't8', name: 'Behind-Back Wrist Curls', sets: 4, reps: '20', rest: 45, note: 'High rep burnout for the lower forearm flexors.', cue: 'Roll to fingertips' }
+              { id: 't1', name: 'Deadlift', sets: 5, reps: '5-8', rest: 240, note: 'Heavy foundational thickness.', cue: 'Brace core tight' },
+              { id: 't2', name: 'Weighted Pull-Ups', sets: 5, reps: '8-10', rest: 180, note: 'Ultimate V-Taper builder.', cue: 'Full dead-hang at bottom' },
+              { id: 't3', name: 'Seated Cable Rows', sets: 4, reps: '10-12', rest: 120, note: 'Retract scapula first, then pull.', cue: 'Squeeze shoulder blades' },
+              { id: 't4', name: 'Lat Pulldowns', sets: 4, reps: '12', rest: 120, note: 'Stretch at the top to build width.', cue: 'Slow eccentric (3s up)' },
+              { id: 't5', name: 'Barbell Bicep Curls', sets: 5, reps: '8-10', rest: 90, note: 'Strict form mass builder.', cue: 'Keep elbows pinned' },
+              { id: 't6', name: 'DB Hammer Curls', sets: 4, reps: '12', rest: 60, note: 'Targets brachialis for width.', cue: 'Control the swing' },
+              { id: 't7', name: 'Reverse Barbell Curls', sets: 4, reps: '15', rest: 60, note: 'Builds upper forearm.', cue: 'Constant tension' },
+              { id: 't8', name: 'Behind-Back Wrist Curls', sets: 4, reps: '20', rest: 45, note: 'High rep burnout for flexors.', cue: 'Roll to fingertips' }
             ]
           },
           {
-            day: 3, name: 'Wednesday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: '8 sets of lateral raises is the aesthetic secret. Form over ego.',
+            day: 3, name: 'Wednesday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: '8 sets of lateral raises is the aesthetic secret.',
             exercises: [
-              { id: 'w1', name: 'Barbell Squats', sets: 5, reps: '8-10', rest: 240, note: 'The foundational leg builder. Go ass to grass.', cue: 'Explode up, control down' },
-              { id: 'w2', name: 'Leg Press', sets: 4, reps: '15-20', rest: 180, note: 'High volume quad annihilation. Keep feet lower on platform.', cue: 'Do not lock out knees' },
-              { id: 'w3', name: 'Lying Leg Curls', sets: 4, reps: '12', rest: 90, note: 'Hamstring isolation. Squeeze hamstrings hard at the top.', cue: 'Hold top squeeze for 1s' },
-              { id: 'w4', name: 'Standing Calf Raises', sets: 5, reps: '20', rest: 60, note: 'Calves need extreme stretching and holding to grow.', cue: 'Pause 2s at bottom' },
-              { id: 'w5', name: 'Dumbbell Overhead Press', sets: 4, reps: '8-10', rest: 120, note: 'Front delt mass builder. Full range of motion.', cue: 'Heavy and explosive' },
-              { id: 'w6', name: 'DB Lateral Raises', sets: 8, reps: '15-20', rest: 60, note: 'THE AESTHETIC SECRET. Do 4 sets seated, 4 standing.', cue: 'Drop-set final 2 sets' },
-              { id: 'w7', name: 'Cable Face Pulls', sets: 4, reps: '20', rest: 60, note: 'Essential for posture and rear deltoid development.', cue: 'Pull to eyes & squeeze' }
+              { id: 'w1', name: 'Barbell Squats', sets: 5, reps: '8-10', rest: 240, note: 'Foundational leg builder. Ass to grass.', cue: 'Explode up, control down' },
+              { id: 'w2', name: 'Leg Press', sets: 4, reps: '15-20', rest: 180, note: 'High volume quad annihilation.', cue: 'Do not lock knees' },
+              { id: 'w3', name: 'Lying Leg Curls', sets: 4, reps: '12', rest: 90, note: 'Hamstring isolation.', cue: 'Hold top squeeze 1s' },
+              { id: 'w4', name: 'Standing Calf Raises', sets: 5, reps: '20', rest: 60, note: 'Extreme stretching needed.', cue: 'Pause 2s at bottom' },
+              { id: 'w5', name: 'DB Overhead Press', sets: 4, reps: '8-10', rest: 120, note: 'Front delt mass builder.', cue: 'Heavy and explosive' },
+              { id: 'w6', name: 'DB Lateral Raises', sets: 8, reps: '15-20', rest: 60, note: 'THE SECRET. 4 sets seated, 4 standing.', cue: 'Drop-set final 2 sets' },
+              { id: 'w7', name: 'Cable Face Pulls', sets: 4, reps: '20', rest: 60, note: 'Posture and rear delts.', cue: 'Pull to eyes & squeeze' }
             ]
           },
           {
             day: 4, name: 'Thursday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Tricep is the secondary mover. Do not ego lift on skull crushers. Focus on the stretch.',
             exercises: [
-              { id: 'th1', name: 'Incline Barbell Bench Press', sets: 5, reps: '8-10', rest: 180, note: 'The primary upper chest mass builder. Explode up.', cue: 'Control the negative (3s)' },
-              { id: 'th2', name: 'Flat Dumbbell Press', sets: 4, reps: '8-12', rest: 120, note: 'Dumbbells allow a deeper stretch. Arch lower back slightly.', cue: 'Deep stretch at bottom' },
-              { id: 'th3', name: 'Decline Dumbbell Press', sets: 4, reps: '10-12', rest: 120, note: 'Builds the lower pec line. Safe to push to absolute failure.', cue: 'Push to failure' },
-              { id: 'th4', name: 'Cable Flyes (Low-to-High)', sets: 4, reps: '15', rest: 90, note: 'Constant tension isolation for the upper fibers.', cue: 'Squeeze & hold top for 1s' },
-              { id: 'th5', name: 'Dumbbell Skull Crushers', sets: 4, reps: '10-12', rest: 90, note: 'Use light DBs with a neutral grip. Safe on elbow tendons.', cue: 'Stretch behind the ears' },
-              { id: 'th6', name: 'Rope Tricep Pushdowns', sets: 5, reps: '12-15', rest: 60, note: 'Pull the rope apart at the very bottom.', cue: 'Drop-set the final set' },
-              { id: 'th7', name: 'Overhead Cable Extension', sets: 4, reps: '12-15', rest: 60, note: 'Targets the long head through maximum stretching.', cue: 'Keep elbows tucked' }
+              { id: 'th1', name: 'Incline Barbell Bench', sets: 5, reps: '8-10', rest: 180, note: 'Primary upper chest mass builder.', cue: 'Control negative (3s)' },
+              { id: 'th2', name: 'Flat Dumbbell Press', sets: 4, reps: '8-12', rest: 120, note: 'Dumbbells allow deeper stretch.', cue: 'Deep stretch at bottom' },
+              { id: 'th3', name: 'Decline DB Press', sets: 4, reps: '10-12', rest: 120, note: 'Builds lower pec line.', cue: 'Push to failure' },
+              { id: 'th4', name: 'Cable Flyes', sets: 4, reps: '15', rest: 90, note: 'Isolation for upper fibers.', cue: 'Squeeze & hold top 1s' },
+              { id: 'th5', name: 'DB Skull Crushers', sets: 4, reps: '10-12', rest: 90, note: 'Safe on elbow tendons.', cue: 'Stretch behind ears' },
+              { id: 'th6', name: 'Rope Pushdowns', sets: 5, reps: '12-15', rest: 60, note: 'Pull rope apart at bottom.', cue: 'Drop-set final set' },
+              { id: 'th7', name: 'Overhead Extension', sets: 4, reps: '12-15', rest: 60, note: 'Targets long head.', cue: 'Keep elbows tucked' }
             ]
           },
           {
             day: 5, name: 'Friday', focus: 'Back & Arms', type: 'Pull Block', tip: 'A wide back shrinks the waist. Pull with your elbows to fully engage lats.',
             exercises: [
-              { id: 'f1', name: 'Rack Pulls', sets: 5, reps: '8-10', rest: 240, note: 'Set pins below the knee. Overloads the upper back.', cue: 'Heavy thickness' },
-              { id: 'f2', name: 'Weighted Pull-Ups', sets: 5, reps: '8-10', rest: 180, note: 'The ultimate V-Taper builder. Pull chest to bar.', cue: 'Full dead-hang at bottom' },
-              { id: 'f3', name: 'Seated Cable Rows', sets: 4, reps: '10-12', rest: 120, note: 'Keep torso stationary. Retract scapula first, then pull.', cue: 'Squeeze shoulder blades' },
-              { id: 'f4', name: 'Lat Pulldowns', sets: 4, reps: '12', rest: 120, note: 'Focus on the stretch at the top to build lat width.', cue: 'Slow eccentric (3s up)' },
-              { id: 'f5', name: 'Barbell Bicep Curls', sets: 5, reps: '8-10', rest: 90, note: 'Strict form mass builder. Do not swing your lower back.', cue: 'Keep elbows pinned' },
-              { id: 'f6', name: 'Dumbbell Hammer Curls', sets: 4, reps: '12', rest: 60, note: 'Targets the brachialis to make the arms wider from the front.', cue: 'Control the swing' },
-              { id: 'f7', name: 'Reverse Barbell Curls', sets: 4, reps: '15', rest: 60, note: 'Builds the upper forearm.', cue: 'Constant tension' },
-              { id: 'f8', name: 'Behind-Back Wrist Curls', sets: 4, reps: '20', rest: 45, note: 'High rep burnout for the lower forearm flexors.', cue: 'Roll to fingertips' }
+              { id: 'f1', name: 'Rack Pulls', sets: 5, reps: '8-10', rest: 240, note: 'Pins below knee. Overloads upper back.', cue: 'Heavy thickness' },
+              { id: 'f2', name: 'Weighted Pull-Ups', sets: 5, reps: '8-10', rest: 180, note: 'Ultimate V-Taper builder.', cue: 'Full dead-hang at bottom' },
+              { id: 'f3', name: 'Seated Cable Rows', sets: 4, reps: '10-12', rest: 120, note: 'Retract scapula first, then pull.', cue: 'Squeeze shoulder blades' },
+              { id: 'f4', name: 'Lat Pulldowns', sets: 4, reps: '12', rest: 120, note: 'Stretch at top to build width.', cue: 'Slow eccentric (3s up)' },
+              { id: 'f5', name: 'Barbell Bicep Curls', sets: 5, reps: '8-10', rest: 90, note: 'Strict form mass builder.', cue: 'Keep elbows pinned' },
+              { id: 'f6', name: 'DB Hammer Curls', sets: 4, reps: '12', rest: 60, note: 'Targets brachialis for width.', cue: 'Control the swing' },
+              { id: 'f7', name: 'Reverse Barbell Curls', sets: 4, reps: '15', rest: 60, note: 'Builds upper forearm.', cue: 'Constant tension' },
+              { id: 'f8', name: 'Behind-Back Wrist Curls', sets: 4, reps: '20', rest: 45, note: 'High rep burnout for flexors.', cue: 'Roll to fingertips' }
             ]
           },
           {
             day: 6, name: 'Saturday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: '8 sets of lateral raises is the aesthetic secret. Form over ego.',
             exercises: [
-              { id: 's1', name: 'Barbell Squats', sets: 5, reps: '8-10', rest: 240, note: 'The foundational leg builder. Go ass to grass.', cue: 'Explode up, control down' },
-              { id: 's2', name: 'Leg Press', sets: 4, reps: '15-20', rest: 180, note: 'High volume quad annihilation. Keep feet lower on platform.', cue: 'Do not lock out knees' },
-              { id: 's3', name: 'Lying Leg Curls', sets: 4, reps: '12', rest: 90, note: 'Hamstring isolation. Squeeze hamstrings hard at the top.', cue: 'Hold top squeeze for 1s' },
-              { id: 's4', name: 'Standing Calf Raises', sets: 5, reps: '20', rest: 60, note: 'Calves need extreme stretching and holding to grow.', cue: 'Pause 2s at bottom' },
-              { id: 's5', name: 'Dumbbell Overhead Press', sets: 4, reps: '8-10', rest: 120, note: 'Front delt mass builder. Full range of motion.', cue: 'Heavy and explosive' },
-              { id: 's6', name: 'DB Lateral Raises', sets: 8, reps: '15-20', rest: 60, note: 'THE AESTHETIC SECRET. Do 4 sets seated, 4 standing.', cue: 'Drop-set final 2 sets' },
-              { id: 's7', name: 'Cable Face Pulls', sets: 4, reps: '20', rest: 60, note: 'Essential for posture and rear deltoid development.', cue: 'Pull to eyes & squeeze' }
+              { id: 's1', name: 'Barbell Squats', sets: 5, reps: '8-10', rest: 240, note: 'Foundational leg builder. Ass to grass.', cue: 'Explode up, control down' },
+              { id: 's2', name: 'Leg Press', sets: 4, reps: '15-20', rest: 180, note: 'High volume quad annihilation.', cue: 'Do not lock knees' },
+              { id: 's3', name: 'Lying Leg Curls', sets: 4, reps: '12', rest: 90, note: 'Hamstring isolation.', cue: 'Hold top squeeze 1s' },
+              { id: 's4', name: 'Standing Calf Raises', sets: 5, reps: '20', rest: 60, note: 'Extreme stretching needed.', cue: 'Pause 2s at bottom' },
+              { id: 's5', name: 'DB Overhead Press', sets: 4, reps: '8-10', rest: 120, note: 'Front delt mass builder.', cue: 'Heavy and explosive' },
+              { id: 's6', name: 'DB Lateral Raises', sets: 8, reps: '15-20', rest: 60, note: 'THE SECRET. 4 sets seated, 4 standing.', cue: 'Drop-set final 2 sets' },
+              { id: 's7', name: 'Cable Face Pulls', sets: 4, reps: '20', rest: 60, note: 'Posture and rear delts.', cue: 'Pull to eyes & squeeze' }
             ]
           },
           {
@@ -335,12 +337,10 @@
           }
         ];
 
-        // --- MAIN APP ---
         const App = () => {
             const [bootState, setBootState] = useState('standby'); 
             const [showAbortModal, setShowAbortModal] = useState(false);
             
-            // STRICTLY SANITIZED STORAGE ENGINE
             const [appState, setAppState] = useState(() => {
                 const defaultState = {
                     currentView: 'dashboard', selectedDay: new Date().getDay(), includeAbs: false, activeWorkout: null,
@@ -350,12 +350,9 @@
                     const saved = localStorage.getItem('amitAestheticState');
                     if (saved) {
                         let parsed = JSON.parse(saved);
-                        if (typeof parsed !== 'object' || parsed === null) throw new Error("Invalid Save Data");
-                        
-                        // SANITIZATION: Prevents the Black Screen Crash
+                        if (typeof parsed !== 'object' || parsed === null) throw new Error();
                         if (parsed.currentView === 'workout' && (!parsed.activeWorkout || !Array.isArray(parsed.activeWorkout.exercises))) {
-                            parsed.currentView = 'dashboard';
-                            parsed.activeWorkout = null;
+                            parsed.currentView = 'dashboard'; parsed.activeWorkout = null;
                         }
                         return { 
                             ...defaultState, ...parsed,
@@ -364,7 +361,7 @@
                             focusedExercise: typeof parsed.focusedExercise === 'number' ? parsed.focusedExercise : null
                         };
                     }
-                } catch(e) { console.error("Corrupted State Recovered"); }
+                } catch(e) {}
                 return defaultState;
             });
 
@@ -439,7 +436,6 @@
 
             const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 
-            // --- RENDER COMPONENT: BOOT SCREEN ---
             const renderBootScreen = () => (
                 <div className="min-h-screen bg-black flex flex-col items-center justify-center relative z-50" onClick={handleBoot}>
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
@@ -459,14 +455,13 @@
                 </div>
             );
 
-            // --- RENDER COMPONENT: DASHBOARD ---
             const renderDashboard = () => {
                 const todayPlan = WORKOUT_PLAN.find(w => w.day === Number(appState.selectedDay)) || WORKOUT_PLAN[0];
                 return (
                     <div className="w-full min-h-screen pb-24 relative animate-fade-in">
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-[0.15]"></div>
                         
-                        <div className="pt-16 pb-6 px-6 relative z-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                        <div className="safe-pt px-6 relative z-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <div className="flex justify-between items-start mb-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 bg-[#0A84FF]/10 border border-[#0A84FF]/40 rounded-full flex items-center justify-center relative shadow-[0_0_20px_rgba(10,132,255,0.2)]">
@@ -567,19 +562,16 @@
                 );
             };
 
-            // --- RENDER COMPONENT: WORKOUT LIST ---
             const renderWorkoutList = () => {
-                // EXTREME NULL GUARD
                 if (!appState.activeWorkout || !appState.activeWorkout.exercises) return null;
-
                 let totalSets = 0; let completedSets = 0;
                 appState.activeWorkout.exercises.forEach(ex => { totalSets += ex.sets; for(let i=0; i<ex.sets; i++) { if(appState.setLogs[ex.id]?.[i]?.completed) completedSets++; } });
                 const progressPercent = totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
 
                 return (
                     <div className="w-full min-h-screen pb-40 bg-black animate-fade-in">
-                        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/10 pt-14 pb-4 px-6 flex flex-col gap-4">
-                            <div className="flex justify-between items-center">
+                        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/10 safe-pt pb-4 px-6 flex flex-col gap-4">
+                            <div className="flex justify-between items-center mt-2">
                                 <div>
                                     <h2 className="text-[10px] font-bold text-[#0A84FF] uppercase tracking-[0.2em] mb-1 font-mono">{appState.activeWorkout.type}</h2>
                                     <h1 className="text-2xl font-black tracking-tight">{appState.activeWorkout.focus}</h1>
@@ -627,23 +619,21 @@
                 );
             };
 
-            // --- RENDER COMPONENT: FOCUS MODE ---
             const renderFocusMode = () => {
-                // EXTREME NULL GUARD
-                if (!appState.activeWorkout || typeof appState.focusedExercise !== 'number' || !appState.activeWorkout.exercises || !appState.activeWorkout.exercises[appState.focusedExercise]) return null;
+                if (typeof appState.focusedExercise !== 'number' || !appState.activeWorkout || !appState.activeWorkout.exercises || !appState.activeWorkout.exercises[appState.focusedExercise]) return null;
                 const ex = appState.activeWorkout.exercises[appState.focusedExercise];
                 const exerciseLogs = appState.setLogs[ex.id] || {};
                 
                 return (
                     <div className="fixed inset-0 bg-black z-[60] overflow-y-auto animate-slide-up-full pb-40">
-                        <div className="sticky top-0 bg-black/90 backdrop-blur-xl z-[70] border-b border-white/10 px-6 pt-14 pb-4 flex justify-between items-center">
-                            <div>
+                        <div className="sticky top-0 bg-black/90 backdrop-blur-xl z-[70] border-b border-white/10 safe-pt px-6 pb-4 flex justify-between items-center">
+                            <div className="mt-2">
                                 <p className="text-[#8e8e93] text-[10px] font-mono tracking-[0.2em] uppercase mb-1">
                                     Exercise {appState.focusedExercise + 1} of {appState.activeWorkout.exercises.length}
                                 </p>
                                 <h1 className="text-xl font-black tracking-tight leading-tight w-64 truncate">{ex.name}</h1>
                             </div>
-                            <button onClick={() => { AudioEngine.close(); updateState({ focusedExercise: null }); }} className="p-3 bg-[#111] rounded-full text-white border border-white/10 active-press transition-transform">
+                            <button onClick={() => { AudioEngine.close(); updateState({ focusedExercise: null }); }} className="p-3 mt-2 bg-[#111] rounded-full text-white border border-white/10 active-press transition-transform">
                                 <ChevronDown size={20} />
                             </button>
                         </div>
@@ -655,7 +645,7 @@
                                     <p className="text-[14px] text-[#ccc] font-medium leading-relaxed">{ex.note}</p>
                                 </div>
                                 {ex.cue && (
-                                    <div className="flex items-center bg-[#0A84FF]/10 p-4 rounded-[20px] border border-[#0A84FF]/30">
+                                    <div className="flex items-center bg-[#0A84FF]/10 p-4 rounded-[20px] border border-[#0A84FF]/30 shadow-inner">
                                         <Activity size={16} className="text-[#0A84FF] mr-3 shrink-0" />
                                         <span className="text-[13px] text-[#0A84FF] font-black uppercase tracking-[0.1em]">{ex.cue}</span>
                                     </div>
@@ -704,47 +694,44 @@
                 );
             };
 
-            const renderAbortModal = () => {
-                if (!showAbortModal) return null;
-                return (
-                    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[999] flex items-center justify-center p-6 animate-fade-in">
-                        <div className="bg-[#111] border border-[#ff453a]/30 p-6 rounded-[32px] w-full max-w-sm shadow-[0_0_40px_rgba(255,69,58,0.2)] animate-zoom-in-modal">
-                            <div className="w-16 h-16 rounded-full bg-[#ff453a]/10 flex items-center justify-center mb-4 mx-auto border border-[#ff453a]/20">
-                                <X size={32} className="text-[#ff453a]" />
-                            </div>
-                            <h2 className="text-xl font-black text-center text-white mb-2 tracking-tight">ABORT PROTOCOL?</h2>
-                            <p className="text-[#8e8e93] text-[13px] text-center mb-8 font-medium">Are you sure you want to terminate the current session? All tracking data will be lost.</p>
-                            <div className="flex gap-3">
-                                <button onClick={() => { AudioEngine.tap(); setShowAbortModal(false); }} className="flex-1 bg-[#222] py-4 rounded-[20px] font-bold text-sm text-white active-press transition-all">Cancel</button>
-                                <button onClick={() => { setShowAbortModal(false); endWorkout(); }} className="flex-1 bg-[#ff453a]/20 py-4 rounded-[20px] font-bold text-sm text-[#ff453a] border border-[#ff453a]/30 active-press transition-all">Terminate</button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
-
-            // --- MASTER RENDER TREE ---
             return (
-                <div className="relative w-full min-h-screen bg-black text-white selection:bg-[#0A84FF]/30">
-                    {/* GLOBAL OVERLAYS */}
-                    <DynamicIslandTimer timerState={timerState} skipTimer={skipTimer} toggleTimerMinimize={toggleTimerMinimize} adjustTimer={adjustTimer} />
-                    {renderAbortModal()}
+                <ErrorBoundary>
+                    <div className="relative w-full min-h-screen bg-black text-white selection:bg-[#0A84FF]/30">
+                        {/* GLOBAL OVERLAYS */}
+                        <DynamicIslandTimer timerState={timerState} skipTimer={skipTimer} toggleTimerMinimize={toggleTimerMinimize} adjustTimer={adjustTimer} />
+                        
+                        {showAbortModal && (
+                            <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[999] flex items-center justify-center p-6 animate-fade-in">
+                                <div className="bg-[#111] border border-[#ff453a]/30 p-6 rounded-[32px] w-full max-w-sm shadow-[0_0_40px_rgba(255,69,58,0.2)] animate-zoom-in-modal">
+                                    <div className="w-16 h-16 rounded-full bg-[#ff453a]/10 flex items-center justify-center mb-4 mx-auto border border-[#ff453a]/20">
+                                        <X size={32} className="text-[#ff453a]" />
+                                    </div>
+                                    <h2 className="text-xl font-black text-center text-white mb-2 tracking-tight">ABORT PROTOCOL?</h2>
+                                    <p className="text-[#8e8e93] text-[13px] text-center mb-8 font-medium">Are you sure you want to terminate the current session? All tracking data will be lost.</p>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => { AudioEngine.tap(); setShowAbortModal(false); }} className="flex-1 bg-[#222] py-4 rounded-[20px] font-bold text-sm text-white active-press transition-all">Cancel</button>
+                                        <button onClick={() => { setShowAbortModal(false); endWorkout(); }} className="flex-1 bg-[#ff453a]/20 py-4 rounded-[20px] font-bold text-sm text-[#ff453a] border border-[#ff453a]/30 active-press transition-all">Terminate</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
-                    {/* ROUTING */}
-                    {bootState !== 'online' ? renderBootScreen() : (
-                        (appState.currentView === 'dashboard' || !appState.activeWorkout) ? renderDashboard() : (
-                            <>
-                                {renderWorkoutList()}
-                                {renderFocusMode()}
-                            </>
-                        )
-                    )}
-                </div>
+                        {/* ROUTING */}
+                        {bootState !== 'online' ? renderBootScreen() : (
+                            (appState.currentView === 'dashboard' || !appState.activeWorkout) ? renderDashboard() : (
+                                <>
+                                    {renderWorkoutList()}
+                                    {renderFocusMode()}
+                                </>
+                            )
+                        )}
+                    </div>
+                </ErrorBoundary>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ErrorBoundary><App /></ErrorBoundary>);
+        root.render(<App />);
     </script>
 </body>
 </html>
