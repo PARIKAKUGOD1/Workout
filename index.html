@@ -12,7 +12,7 @@
     <!-- PWA Manifest Link -->
     <link rel="manifest" href="./manifest.json">
 
-    <!-- Premium App Icons (FIXED FOR PWABUILDER) -->
+    <!-- Premium App Icons -->
     <link rel="apple-touch-icon" sizes="512x512" href="./icon.png">
     <link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
 
@@ -46,6 +46,10 @@
         .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
         .glow-pulse { animation: pulseOpacity 2.5s infinite ease-in-out; }
         .active-press:active { transform: scale(0.96); transition: transform 0.1s; }
+        
+        /* Safe Area Padding for mobile notches */
+        .safe-pt { padding-top: max(env(safe-area-inset-top), 20px); }
+        .safe-pb { padding-bottom: max(env(safe-area-inset-bottom), 20px); }
     </style>
 </head>
 <body>
@@ -61,7 +65,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, memo } = React;
 
-        // --- BULLETPROOF AUDIO ENGINE ---
+        // --- BULLETPROOF AUDIO ENGINE (VOLUME BOOSTED) ---
         const AudioEngine = {
             ctx: null, unlocked: false,
             init() {
@@ -83,7 +87,7 @@
                     this.unlocked = true;
                 } catch(e) {}
             },
-            playNote(freq, startTimeOffset, duration, type='sine', vol=0.1) {
+            playNote(freq, startTimeOffset, duration, type='sine', vol=0.3) {
                 try {
                     if (!this.unlocked) return;
                     const ctx = this.init();
@@ -100,12 +104,12 @@
                     osc.start(t); osc.stop(t + duration);
                 } catch(e) {}
             },
-            tap() { this.playNote(400, 0, 0.1, 'sine', 0.03); },
-            open() { this.playNote(300, 0, 0.15, 'sine', 0.05); this.playNote(450, 0.05, 0.2, 'sine', 0.05); },
-            close() { this.playNote(450, 0, 0.15, 'sine', 0.05); this.playNote(300, 0.05, 0.2, 'sine', 0.05); },
-            success() { this.playNote(440, 0, 0.25, 'sine', 0.08); this.playNote(554.37, 0.08, 0.4, 'sine', 0.08); },
-            toggleOn() { this.playNote(300, 0, 0.1, 'sine', 0.05); this.playNote(400, 0.06, 0.15, 'sine', 0.05); },
-            toggleOff() { this.playNote(400, 0, 0.1, 'sine', 0.04); this.playNote(300, 0.06, 0.15, 'sine', 0.04); },
+            tap() { this.playNote(600, 0, 0.08, 'sine', 0.3); },
+            open() { this.playNote(400, 0, 0.15, 'sine', 0.3); this.playNote(600, 0.05, 0.2, 'sine', 0.3); },
+            close() { this.playNote(600, 0, 0.15, 'sine', 0.3); this.playNote(400, 0.05, 0.2, 'sine', 0.3); },
+            success() { this.playNote(440, 0, 0.25, 'sine', 0.4); this.playNote(554.37, 0.08, 0.4, 'sine', 0.4); },
+            toggleOn() { this.playNote(400, 0, 0.1, 'sine', 0.3); this.playNote(600, 0.06, 0.15, 'sine', 0.3); },
+            toggleOff() { this.playNote(600, 0, 0.1, 'sine', 0.3); this.playNote(400, 0.06, 0.15, 'sine', 0.3); },
             boot() { 
                 try {
                     if (!this.unlocked) this.unlock();
@@ -118,7 +122,7 @@
                     osc.frequency.setValueAtTime(150, t);
                     osc.frequency.exponentialRampToValueAtTime(40, t + 0.6);
                     gain.gain.setValueAtTime(0, t);
-                    gain.gain.linearRampToValueAtTime(0.2, t + 0.1);
+                    gain.gain.linearRampToValueAtTime(0.7, t + 0.1);
                     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
                     osc.connect(gain); gain.connect(ctx.destination);
                     osc.start(t); osc.stop(t + 0.8);
@@ -137,7 +141,7 @@
                     osc.frequency.setValueAtTime(250, t);
                     osc.frequency.exponentialRampToValueAtTime(30, t + 0.7);
                     gain.gain.setValueAtTime(0, t);
-                    gain.gain.linearRampToValueAtTime(0.15, t + 0.1);
+                    gain.gain.linearRampToValueAtTime(0.6, t + 0.1);
                     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
                     osc.connect(gain); gain.connect(ctx.destination);
                     osc.start(t); osc.stop(t + 0.7);
@@ -145,13 +149,12 @@
                 } catch(e) {}
             },
             timerFinish() {
-                this.playNote(783.99, 0, 0.5, 'sine', 0.15); // G5
-                this.playNote(1046.50, 0.2, 0.8, 'sine', 0.15); // C6
+                this.playNote(783.99, 0, 0.5, 'sine', 0.6); 
+                this.playNote(1046.50, 0.2, 0.8, 'sine', 0.6); 
                 if ('vibrate' in navigator) navigator.vibrate([150, 50, 150]);
             }
         };
 
-        // --- ICONS ---
         const Icon = ({ d, points, rects, circles, lines, polylines, size=24, className="", style={} }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
                 {d && <path d={d} />} {points && <polygon points={points} />}
@@ -202,14 +205,16 @@
 
             if (timerState.minimized) {
                 return (
-                    <div onClick={toggleTimerMinimize} className="hw-accel fixed top-3 left-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active-press transition-all animate-slide-down" style={{ transform: 'translateX(-50%) translateZ(0)' }}>
+                    <div onClick={toggleTimerMinimize} className="hw-accel fixed left-1/2 bg-[#111113]/90 backdrop-blur-xl border border-white/20 text-white px-5 py-2.5 rounded-full flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[999] cursor-pointer active-press transition-all animate-slide-down" 
+                         style={{ transform: 'translateX(-50%) translateZ(0)', top: 'calc(env(safe-area-inset-top, 12px) + 12px)' }}>
                         <Clock size={16} className="text-[#0A84FF] animate-pulse" />
                         <span className="font-mono font-bold text-sm tracking-widest">{formatTime(timeLeft)}</span>
                     </div>
                 );
             }
             return (
-                <div className="hw-accel fixed top-3 left-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island" style={{ transform: 'translateX(-50%) translateZ(0)' }}>
+                <div className="hw-accel fixed left-1/2 w-[92vw] max-w-sm bg-[#111113]/95 backdrop-blur-3xl border border-white/20 p-6 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.95)] z-[999] flex flex-col items-center animate-zoom-in-island" 
+                     style={{ transform: 'translateX(-50%) translateZ(0)', top: 'calc(env(safe-area-inset-top, 12px) + 12px)' }}>
                     <div className="w-full flex justify-between items-center mb-4">
                         <button onClick={skipTimer} className="text-[#8e8e93] hover:text-[#ff453a] p-3 bg-white/5 rounded-full transition-colors active-press"><X size={18} /></button>
                         <h3 className="text-[#0A84FF] text-[11px] font-bold uppercase tracking-[0.2em]">{timerState.label}</h3>
@@ -380,6 +385,21 @@
                 setTimeout(() => setBootState('online'), 1000);
             };
 
+            // --- RESTORED: GLOBAL TIMER WATCHDOG ---
+            // This constantly monitors the timer in the background. When it hits exactly 0, it forces the finish sequence.
+            useEffect(() => {
+                if (!timerState.active || !timerState.endTime) return;
+                
+                const checkFinish = setInterval(() => {
+                    if (Date.now() >= timerState.endTime) {
+                        AudioEngine.timerFinish();
+                        setTimerState(prev => ({ ...prev, active: false, endTime: null }));
+                    }
+                }, 500); // Checks every half second to be perfectly accurate without draining battery
+                
+                return () => clearInterval(checkFinish);
+            }, [timerState.active, timerState.endTime]);
+
             const startTimer = (seconds, label = "Rest") => setTimerState({ active: true, endTime: Date.now() + seconds * 1000, label: label, minimized: true });
             const skipTimer = () => { AudioEngine.toggleOff(); setTimerState({ active: false, endTime: null, label: "", minimized: true }); }
             const adjustTimer = (seconds) => { AudioEngine.tap(); if (timerState.endTime) setTimerState(prev => ({ ...prev, endTime: prev.endTime + (seconds * 1000) })); };
@@ -438,7 +458,7 @@
             const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 
             const renderBootScreen = () => (
-                <div className="hw-accel min-h-screen bg-black flex flex-col items-center justify-center relative z-50" onClick={handleBoot}>
+                <div className="min-h-screen bg-black flex flex-col items-center justify-center relative z-50" onClick={handleBoot}>
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                     <div className={`flex flex-col items-center transition-all duration-1000 ${bootState === 'booting' ? 'scale-150 opacity-0 blur-md' : 'opacity-100'}`}>
                         <div className="w-24 h-24 rounded-full border border-[#0A84FF]/30 flex items-center justify-center mb-8 relative">
@@ -462,7 +482,7 @@
                     <div className="hw-accel w-full min-h-screen pb-24 relative animate-fade-in">
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-[0.15]"></div>
                         
-                        <div className="pt-16 pb-6 px-6 relative z-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                        <div className="safe-pt px-6 relative z-10 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <div className="flex justify-between items-start mb-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 bg-[#0A84FF]/10 border border-[#0A84FF]/40 rounded-full flex items-center justify-center relative shadow-[0_0_20px_rgba(10,132,255,0.2)]">
@@ -571,8 +591,8 @@
 
                 return (
                     <div className="hw-accel w-full min-h-screen pb-40 bg-black animate-fade-in">
-                        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/10 pt-14 pb-4 px-6 flex flex-col gap-4">
-                            <div className="flex justify-between items-center">
+                        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-white/10 safe-pt pb-4 px-6 flex flex-col gap-4">
+                            <div className="flex justify-between items-center mt-2">
                                 <div>
                                     <h2 className="text-[10px] font-bold text-[#0A84FF] uppercase tracking-[0.2em] mb-1 font-mono">{appState.activeWorkout.type}</h2>
                                     <h1 className="text-2xl font-black tracking-tight">{appState.activeWorkout.focus}</h1>
@@ -626,15 +646,15 @@
                 const exerciseLogs = appState.setLogs[ex.id] || {};
                 
                 return (
-                    <div className="hw-accel fixed inset-0 bg-black z-[60] overflow-y-auto animate-slide-up-full pb-40">
-                        <div className="sticky top-0 bg-black/90 backdrop-blur-xl z-[70] border-b border-white/10 px-6 pt-14 pb-4 flex justify-between items-center">
-                            <div>
+                    <div className="fixed inset-0 bg-black z-[60] overflow-y-auto animate-slide-up-full pb-40">
+                        <div className="sticky top-0 bg-black/90 backdrop-blur-xl z-[70] border-b border-white/10 safe-pt px-6 pb-4 flex justify-between items-center">
+                            <div className="mt-2">
                                 <p className="text-[#8e8e93] text-[10px] font-mono tracking-[0.2em] uppercase mb-1">
                                     Exercise {appState.focusedExercise + 1} of {appState.activeWorkout.exercises.length}
                                 </p>
                                 <h1 className="text-xl font-black tracking-tight leading-tight w-64 truncate">{ex.name}</h1>
                             </div>
-                            <button onClick={() => { AudioEngine.close(); updateState({ focusedExercise: null }); }} className="p-3 bg-[#111] rounded-full text-white border border-white/10 active-press transition-transform">
+                            <button onClick={() => { AudioEngine.close(); updateState({ focusedExercise: null }); }} className="p-3 mt-2 bg-[#111] rounded-full text-white border border-white/10 active-press transition-transform">
                                 <ChevronDown size={20} />
                             </button>
                         </div>
@@ -730,7 +750,7 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 </html>
