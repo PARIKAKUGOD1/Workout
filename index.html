@@ -10,7 +10,6 @@
     <title>Amit Protocol</title>
     
     <link rel="manifest" href="./manifest.json">
-
     <link rel="apple-touch-icon" sizes="512x512" href="./icon.png">
     <link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
 
@@ -18,10 +17,38 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;700;900&display=swap" rel="stylesheet">
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Switched to highly reliable JSDelivr Network to prevent Boot Freezes -->
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // Catch any raw CDN loading errors and print them to the fallback screen
+        window.onerror = function(msg, url, lineNo) {
+            var fbMsg = document.getElementById('fb-msg');
+            if (fbMsg) fbMsg.innerHTML += '<br><br><span style="color:#ff453a; font-size:11px;">System Error: ' + msg + ' (Line ' + lineNo + ')</span>';
+            return false;
+        };
+
+        // Bulletproof Cache Flush Function
+        function forceSystemReset() {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                var btn = document.getElementById('reset-btn');
+                if (btn) btn.innerText = 'REBOOTING...';
+                var msg = document.getElementById('fb-msg');
+                if (msg) msg.innerHTML = '<span style="color:#34C759; font-weight:bold; font-size:14px;">Memory flushed. Reloading protocol...</span>';
+                
+                setTimeout(function() {
+                    window.location.href = window.location.pathname + '?v=' + new Date().getTime();
+                }, 600);
+            } catch(e) {
+                alert('Reset failed. Please clear browser history manually. Error: ' + e.message);
+            }
+        }
+    </script>
 
     <style>
         body { 
@@ -38,7 +65,6 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-        /* Pure CSS Animations */
         @keyframes slideDown { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         @keyframes slideUpFullScreen { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes zoomInIsland { from { transform: translate(-50%, -10px) scale(0.95); opacity: 0; } to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
@@ -55,24 +81,23 @@
         .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
         .glow-pulse { animation: pulseOpacity 2.5s infinite ease-in-out; }
         
-        /* Liquid Touch Ripples */
         @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
         .ripple-effect { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple-anim 0.6s linear; background-color: rgba(255, 255, 255, 0.25); pointer-events: none; z-index: 0; }
         
         .active-press { transition: transform 0.15s ease, opacity 0.15s ease; }
         .active-press:active { transform: scale(0.96); opacity: 0.8; }
         
-        /* Safe Area Padding for mobile notches */
         .safe-pt { padding-top: max(env(safe-area-inset-top), 20px); }
         .safe-pb { padding-bottom: max(env(safe-area-inset-bottom), 20px); }
     </style>
 </head>
 <body>
     <div id="root">
+        <!-- Emergency Fallback Screen -->
         <div style="display:flex; height:100vh; width:100vw; background:#000; color:#fff; align-items:center; justify-content:center; flex-direction:column; font-family:sans-serif; text-align:center; padding:20px;">
             <h2 style="color:#0A84FF; font-weight:900; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px;">System Booting...</h2>
-            <p style="color:#888; font-size:12px; margin-bottom:30px;">If this screen remains frozen, tap below to flush cache.</p>
-            <button onclick="localStorage.clear(); window.location.reload();" style="padding:15px 30px; background:#111; border:1px solid #333; color:#ff453a; border-radius:20px; font-weight:bold; letter-spacing:2px; text-transform:uppercase;">Force Reset</button>
+            <p id="fb-msg" style="color:#888; font-size:12px; margin-bottom:30px;">If this screen remains frozen, tap below to flush cache.</p>
+            <button id="reset-btn" onclick="forceSystemReset()" style="padding:15px 30px; background:#111; border:1px solid #333; color:#ff453a; border-radius:20px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; cursor:pointer;">Force Reset</button>
         </div>
     </div>
 
@@ -285,7 +310,7 @@
             render() {
                 if (this.state.hasError) {
                     return (
-                        <div style={{minHeight:'100vh', width:'100vw', backgroundColor:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyCoentent:'center', padding:'20px', textAlign:'center', fontFamily:'Space Grotesk, sans-serif', zIndex:9999, position:'fixed', top:0, left:0}}>
+                        <div style={{minHeight:'100vh', width:'100vw', backgroundColor:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px', textAlign:'center', fontFamily:'Space Grotesk, sans-serif', zIndex:9999, position:'fixed', top:0, left:0}}>
                             <div style={{width:'80px', height:'80px', borderRadius:'40px', backgroundColor:'rgba(255,69,58,0.1)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'24px', border:'2px solid rgba(255,69,58,0.3)'}}>
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ff453a" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                             </div>
@@ -294,7 +319,7 @@
                                 A fatal error occurred: {this.state.errorMsg}<br/><br/>
                                 The system caught the crash to prevent a blackout. Please reset your memory cache.
                             </p>
-                            <button onClick={() => { localStorage.clear(); window.location.reload(); }} style={{backgroundColor:'rgba(255,69,58,0.2)', color:'#ff453a', fontWeight:'900', padding:'18px 40px', borderRadius:'24px', border:'1px solid rgba(255,69,58,0.4)', textTransform:'uppercase', letterSpacing:'2px'}}>
+                            <button onClick={() => { try{localStorage.clear(); sessionStorage.clear();}catch(e){} window.location.href = window.location.pathname + '?v=' + new Date().getTime(); }} style={{backgroundColor:'rgba(255,69,58,0.2)', color:'#ff453a', fontWeight:'900', padding:'18px 40px', borderRadius:'24px', border:'1px solid rgba(255,69,58,0.4)', textTransform:'uppercase', letterSpacing:'2px'}}>
                                 INITIATE HARD RESET
                             </button>
                         </div>
@@ -306,21 +331,21 @@
 
         const ABS_MODULE = [
           { 
-            id: 'abs1', name: 'Heavy Cable Crunches', sets: 5, reps: '15-20', rest: 60, 
-            note: 'Treat abs like any other muscle. Use heavy resistance to force thick blocky definition.', cue: 'Squeeze at bottom for 1s',
+            id: 'abs1', name: 'Heavy Cable Crunches', sets: 3, reps: '15-20', rest: 60, 
+            note: '1 Warmup Set + 2 Heavy Sets to Failure. Use heavy resistance to force blocky definition.', cue: 'Squeeze at bottom for 1s',
             target: 'Rectus Abdominis (Upper Abs)',
             setup: 'Attach a rope handle to a high cable pulley station. Kneel down facing or away from the stack.',
             steps: ['Hold rope by ears.', 'Crunch downward by curving the thoracic spine.', 'Bring elbows towards thighs.', 'Control back up slowly.']
           },
           { 
-            id: 'abs2', name: 'Hanging Leg Raises', sets: 4, reps: '15', rest: 60, 
-            note: 'V-Taper lower ab builder. Do not swing your body or use momentum.', cue: 'Control eccentric (3s down)',
+            id: 'abs2', name: 'Hanging Leg Raises', sets: 3, reps: 'Failure', rest: 60, 
+            note: '1 Warmup Set + 2 Heavy Sets to Failure. Do not swing your body or use momentum.', cue: 'Control eccentric (3s down)',
             target: 'Lower Rectus Abdominis & Obliques',
             setup: 'Hang completely straight from a pull-up bar with a standard overhand grip.',
             steps: ['Brace core to stop body swing.', 'Raise legs up past 90 degrees strictly using pelvic rotation.', 'Pause at top contraction.', 'Lower slowly over 3 seconds.']
           },
           { 
-            id: 'abs3', name: 'Weighted Planks', sets: 3, reps: '60s', rest: 60, 
+            id: 'abs3', name: 'Weighted Planks', sets: 3, reps: '60s+', rest: 60, 
             note: 'Core stability foundation. Place a plate safely on your back or have your partner position it.', cue: 'Keep core tight, no sagging',
             target: 'Transversus Abdominis (Deep Core Alignment)',
             setup: 'Assume a standard forearm plank position. Place weight flat on upper glutes/lower back.',
@@ -328,54 +353,55 @@
           }
         ];
 
+        // 2xF PROTOCOL IMPLEMENTED & LOW-TO-HIGH CABLES ADDED
         const WORKOUT_PLAN = [
           {
-            day: 1, name: 'Monday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Upper chest shelf, maximum chest width, and heavy tricep mass.',
+            day: 1, name: 'Monday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Execute 2xF Protocol: 1 Warmup set, then 2 sets to absolute mechanical failure.',
             exercises: [
               { 
-                id: 'm1', name: 'Incline Dumbbell Press', sets: 4, reps: '8-10', rest: 120, note: 'Have Krishna spot you on the last set to push to failure safely.', cue: 'Deep stretch at bottom',
+                id: 'm1', name: 'Incline Dumbbell Press', sets: 3, reps: '8-10', rest: 120, note: '2xF Protocol (1 Warmup + 2x Failure). Have Krishna spot you to push to absolute failure safely.', cue: 'Deep stretch at bottom',
                 target: 'Clavicular Head (Upper Chest Shelf)',
-                setup: 'Set an adjustable bench to an incline angle of 30–45 degrees. Sit with two heavy dumbbells resting on your knees.',
+                setup: 'Set an adjustable bench to an incline angle of 30-45 degrees. Sit with two heavy dumbbells resting on your knees.',
                 steps: ['Kick dumbbells up to shoulders while laying back.', 'Keep your elbows tucked slightly forward at a 45-degree angle.', 'Lower the weight under complete control until you feel a deep stretch across upper chest.', 'Explode vertically back up to lock-out.']
               },
               { 
-                id: 'm2', name: 'Flat Dumbbell Press', sets: 4, reps: '8-10', rest: 120, note: 'Overall mass and mid chest builder. Free weights allow deep hand convergence.', cue: 'Control the negative',
+                id: 'm2', name: 'Flat Dumbbell Press', sets: 3, reps: '8-10', rest: 120, note: '2xF Protocol. Overall mass and mid chest builder. Go heavy.', cue: 'Control the negative',
                 target: 'Sternal Head (Mid Chest Mass Cluster)',
                 setup: 'Lie flat on a standard bench holding two heavy dumbbells directly over your chest area.',
                 steps: ['Retract shoulder blades flat into pad.', 'Descend slowly, letting hands go wider than your torso at the base for an elite outer pec stretch.', 'Press upward in an arc, converging dumbbells near the peak point without hitting them together.', 'Squeeze pecs at peak.']
               },
               { 
-                id: 'm3', name: 'High-to-Low Cable Crossovers', sets: 3, reps: '12-15', rest: 90, note: 'Cross your hands over each other at the bottom for ultimate outer line execution.', cue: 'Squeeze and hold',
+                id: 'm3', name: 'High-to-Low Cable Crossovers', sets: 3, reps: '10-12', rest: 90, note: '2xF Protocol. Cross your hands over each other at the bottom for ultimate outer line execution.', cue: 'Squeeze and hold',
                 target: 'Costal Head (Lower Pec Sweep Alignment)',
                 setup: 'Set dual cable pulleys to the absolute highest position. Grab handles, step forward into a staggered stance.',
                 steps: ['Keep a slight bend in elbows.', 'Bring hands downward and inward in a wide arc meeting ahead of your hips.', 'Cross wrists over at the end vector.', 'Hold peak contraction for a strict 1-second count.']
               },
               { 
-                id: 'm4', name: 'Pec Deck Flys', sets: 3, reps: '12-15', rest: 90, note: 'Hold the squeeze at the peak for a full second. Keeps constant tension alive.', cue: 'Strict isolation',
+                id: 'm4', name: 'Low-to-High Cable Flyes', sets: 3, reps: '12-15', rest: 90, note: '2xF Protocol. The Aesthetic Sculptor. Specifically pop the upper/inner chest shelf.', cue: 'Scoop upward and squeeze',
+                target: 'Clavicular Head & Inner Chest Tie-in',
+                setup: 'Set dual cable pulleys to the absolute lowest position near the floor. Stand tall with a staggered stance.',
+                steps: ['Keep arms relatively straight with a micro-bend in elbows.', 'Scoop the cables upward and inward in an underhand motion.', 'Bring your hands together right in front of your upper chest / chin area.', 'Squeeze the upper chest hard before slowly lowering the weight back down.']
+              },
+              { 
+                id: 'm5', name: 'Pec Deck Flys', sets: 3, reps: '12-15', rest: 90, note: '2xF Protocol. Hold the squeeze at the peak for a full second. Keeps constant tension alive.', cue: 'Strict isolation',
                 target: 'Inner Sternal Fibers (Chest Separation Line)',
                 setup: 'Adjust seat height so handles sit level with mid-chest. Press back flat into pad.',
                 steps: ['Place forearms/hands securely on pads.', 'Fly handles forward using only chest contraction.', 'Squeeze hard at center line.', 'Allow a highly controlled eccentric return stretching fully past torso plane.']
               },
               { 
-                id: 'm5', name: 'Dumbbell Pullovers', sets: 3, reps: '10-12', rest: 90, note: 'Serratus Anterior & Ribcage expansion for the V-taper from the front.', cue: 'Stretch lats and chest',
-                target: 'Serratus Anterior & Intercostal Grids',
-                setup: 'Lie perpendicular across a flat bench, upper back supported on pad. Hold a dumbbell with diamond hand grip over face.',
-                steps: ['Drop hips slightly below bench plane.', 'Lower weight backward behind head in a long arc while inhaling deeply.', 'Feel extreme expansion in chest wall and rib layout.', 'Pull back over to chest line using sides of torso.']
-              },
-              { 
-                id: 'm6', name: 'V-Bar Cable Pushdowns', sets: 4, reps: '10-12', rest: 60, note: 'Heats up the elbow joints and hits the lateral tricep head.', cue: 'Squeeze at lock-out',
+                id: 'm6', name: 'V-Bar Cable Pushdowns', sets: 3, reps: '10-12', rest: 60, note: '2xF Protocol. Heats up the elbow joints and hits the lateral tricep head.', cue: 'Squeeze at lock-out',
                 target: 'Lateral Head (Outer Horseshoe Bulk)',
                 setup: 'Attach a solid V-Bar to upper cable station. Stand close, pin upper arm segments tightly against rib cage.',
                 steps: ['Grab bar with an overhand angle.', 'Drive bar down strictly by snapping elbow joint.', 'Force full arm extension at base.', 'Let bar slowly return up to a 90-degree angle without moving the elbow forward.']
               },
               { 
-                id: 'm7', name: 'Overhead Cable Tricep Extension', sets: 3, reps: '10-12', rest: 60, note: 'Hits the long head of the tricep by loading it in a fully stretched setup.', cue: 'Keep elbows tucked',
+                id: 'm7', name: 'Overhead Cable Tricep Extension', sets: 3, reps: '10-12', rest: 60, note: '2xF Protocol. Hits the long head of the tricep by loading it in a fully stretched setup.', cue: 'Keep elbows tucked',
                 target: 'Long Head (Rear Upper Arm Density)',
                 setup: 'Attach rope attachment to upper cable pulley. Turn away from stack, drop into split stance, pull rope behind head.',
                 steps: ['Keep elbows close to head pointing forward.', 'Extend forearms forward and upward using only tricep force.', 'Flare rope ends apart at extension peak.', 'Slowly fold arms back down feeling a deep long-head stretch.']
               },
               { 
-                id: 'm8', name: 'Seated Overhead Dumbbell Extension', sets: 3, reps: '10-12', rest: 90, note: 'Pure, heavy dumbbell mass. Deep stretch at bottom. Hand off dumbbell with Krishna.', cue: 'Heavy weight, safe form',
+                id: 'm8', name: 'Seated Overhead Dumbbell Extension', sets: 3, reps: '10-12', rest: 90, note: '2xF Protocol. Pure, heavy dumbbell mass. Hand off dumbbell with Krishna.', cue: 'Heavy weight, safe form',
                 target: 'Overall Tricep Complex & Medial Head',
                 setup: 'Sit on short-backed vertical bench. Hold one heavy dumbbell using both hands in a interlocking diamond pattern directly over head.',
                 steps: ['Lower weight vertically behind neck carefully.', 'Keep upper arm bones as static as humanly possible.', 'Descend to full range of motion stretch depth.', 'Drive dumbbell back upward to ceiling ceiling lockout.']
@@ -383,64 +409,64 @@
             ]
           },
           {
-            day: 2, name: 'Tuesday', focus: 'Back & Biceps', type: 'Pull Block', tip: 'Raw pulling strength, lat sweep for the V-taper, and bicep peaks.',
+            day: 2, name: 'Tuesday', focus: 'Back & Biceps', type: 'Pull Block', tip: 'Execute 2xF Protocol: 1 Warmup set, then 2 sets to absolute mechanical failure.',
             exercises: [
               { 
-                id: 't1', name: 'Conventional Barbell Deadlift', sets: 5, reps: '3-5', rest: 180, note: 'First 2 sets are light warmups. Last 3 sets are heavy working sets. Target that PR.', cue: 'Perfect raw strength form',
+                id: 't1', name: 'Conventional Barbell Deadlift', sets: 3, reps: '3-5', rest: 180, note: 'Do 2 unlogged warmups. Then do 3 heavy working sets. Target that PR.', cue: 'Perfect raw strength form',
                 target: 'Erector Spinae, Glutes, Hamstrings & Full Posterior Chain',
                 setup: 'Barbell loaded on floor over mid-foot. Stance shoulder-width. Grip bar outside shins.',
                 steps: ['Drop hips, flatten back completely, pull slack out bar.', 'Drive through heels, pushing floor away.', 'Keep bar locked tight against shins and thighs.', 'Lock out hips fully at peak without hyperextending spine.']
               },
               { 
-                id: 't2', name: 'Chest-Supported Incline DB Row', sets: 3, reps: '8-10', rest: 120, note: 'Mid-Back Thickness. Back pad isolates muscle cleanly without lower back fatigue.', cue: 'Pull to belly button',
+                id: 't2', name: 'Chest-Supported Incline DB Row', sets: 3, reps: '8-10', rest: 120, note: '2xF Protocol (1 Warmup + 2x Failure). Back pad isolates muscle cleanly without lower back fatigue.', cue: 'Pull to belly button',
                 target: 'Rhomboids, Mid-Traps & Upper Back Density',
                 setup: 'Set bench to a 30-45 degree incline. Lie prone (face-down) with chest flat against pad, holding two heavy dumbbells.',
                 steps: ['Let arms hang down completely to spread scapula grid.', 'Row weights upward by pulling elbows high and back toward hips.', 'Squeeze shoulder blades together with max force at peak.', 'Lower weights to complete dead stretch.']
               },
               { 
-                id: 't3', name: 'Plate-Loaded Lat Pullover Machine', sets: 4, reps: '10-12', rest: 90, note: 'Corewave flagship machine (from 15752.jpg). Completely isolates lats by eliminating bicep cheating.', cue: 'Stretch lats completely',
+                id: 't3', name: 'Plate-Loaded Lat Pullover Machine', sets: 3, reps: '10-12', rest: 90, note: '2xF Protocol. Completely isolates lats by eliminating bicep cheating.', cue: 'Stretch lats completely',
                 target: 'Iliocostalis Lats (Pure Width & Wingspan Expansion)',
                 setup: 'Adjust seat so shoulder axis aligns with pivot wheel. Secure lap bar tightly over thighs.',
                 steps: ['Place elbows on pads, lightly gripping overhead handrail.', 'Drive elbows down and back in an arc using purely lat leverage.', 'Pull machine arm down until bar meets stomach level.', 'Control the return up into a massive overhead stretch.']
               },
               { 
-                id: 't4', name: 'Hammer Strength Iso-Lateral Row', sets: 3, reps: '8-12', rest: 90, note: 'Per arm isolation. Pull arm low to hip to isolate the lowest section of lat insertion.', cue: 'Isolate lower lat',
+                id: 't4', name: 'Hammer Strength Iso-Lateral Row', sets: 3, reps: '8-12', rest: 90, note: '2xF Protocol. Pull arm low to hip to isolate the lowest section of lat insertion.', cue: 'Isolate lower lat',
                 target: 'Lower Latissimus Dorsi Insertion (Low V-Taper Tie-In)',
                 setup: 'Sit chest flat against chest pad. Reach forward to grip machine handle using neutral orientation.',
                 steps: ['Pull with one side at a time.', 'Drive elbow backward keeping it scraped tight alongside torso side.', 'Do not let torso rotate or swing off pad.', 'Squeeze lowest back zone before returning handle forward.']
               },
               { 
-                id: 't5', name: 'Wide Grip Lat Pulldown', sets: 3, reps: '8-12', rest: 90, note: 'Pull with your elbows driving down, not your hands. Builds upper frame wings.', cue: 'Stretch at the top',
+                id: 't5', name: 'Wide Grip Lat Pulldown', sets: 3, reps: '8-12', rest: 90, note: '2xF Protocol. Pull with your elbows driving down, not your hands. Builds upper frame wings.', cue: 'Stretch at the top',
                 target: 'Outer Latissimus Dorsi Sweep & Teres Major',
                 setup: 'Grip standard pull bar out wide on angled outer handles. Slide knees under secure pad.',
                 steps: ['Lean back slightly (10-15 degrees), look up at bar.', 'Drive elbows downward and slightly backward, pulling bar to upper collarbone.', 'Squeeze lats at bottom.', 'Let bar pull arms up into complete straight dead-hang stretch.']
               },
               { 
-                id: 't6', name: 'Preacher Curl Machine', sets: 4, reps: '8-12', rest: 60, note: 'Bicep short head and thickness. No momentum or leaning back allowed.', cue: 'Strict isolation',
+                id: 't6', name: 'Preacher Curl Machine', sets: 3, reps: '8-12', rest: 60, note: '2xF Protocol. Bicep short head and thickness. No momentum or leaning back allowed.', cue: 'Strict isolation',
                 target: 'Bicep Brachii Short Head (Inner Arm Thickness)',
                 setup: 'Sit deep in machine. Place armpits flat against top edge of padding, arms fully extended down pad.',
                 steps: ['Grip machine handles using underhand technique.', 'Curl handles upward toward face keeping back of arms glued to pad.', 'Do not allow shoulders to lift off seat.', 'Lower bar under intense eccentric control to absolute bottom.']
               },
               { 
-                id: 't7', name: 'Incline Dumbbell Curls', sets: 3, reps: '10-12', rest: 60, note: 'Keep elbows pointed straight down to the floor for max lengthened position.', cue: 'Deep stretch, no swing',
+                id: 't7', name: 'Incline Dumbbell Curls', sets: 3, reps: '10-12', rest: 60, note: '2xF Protocol. Keep elbows pointed straight down to the floor for max lengthened position.', cue: 'Deep stretch, no swing',
                 target: 'Bicep Brachii Long Head (Vertical Arm Peak)',
                 setup: 'Set bench to 45-degree incline. Lie back completely letting arms hang straight down behind body axis.',
                 steps: ['Pin elbows in space—do not let them travel forward as you lift.', 'Supinate wrists (turn palms up) as you curl weights upward.', 'Squeeze outer bicep peak at top.', 'Lower dumbbells slowly until arms are fully straight and stretched.']
               },
               { 
-                id: 't8', name: 'Dumbbell Hammer Curls', sets: 3, reps: '10-12', rest: 60, note: 'Builds the Brachialis to make the arm look wider from the front profile.', cue: 'Constant tension',
+                id: 't8', name: 'Dumbbell Hammer Curls', sets: 3, reps: '10-12', rest: 60, note: '2xF Protocol. Builds the Brachialis to make the arm look wider from the front profile.', cue: 'Constant tension',
                 target: 'Brachialis & Brachioradialis Core Link',
                 setup: 'Stand straight holding dumbbells down by sides with palms facing each other (neutral grip).',
                 steps: ['Curl weight upward keeping thumbs pointing straight up.', 'Keep elbow joint pinned tightly to ribs.', 'Perform movement without body swaying or hip drive.', 'Lower smoothly down to full extension.']
               },
               { 
-                id: 't9', name: 'Reverse EZ Bar Curls', sets: 3, reps: '12-15', rest: 60, note: 'Brachioradialis and upper forearm mass. Grip the inner downward waves of bar.', cue: 'Squeeze at top',
+                id: 't9', name: 'Reverse EZ Bar Curls', sets: 3, reps: '12-15', rest: 60, note: '2xF Protocol. Brachioradialis and upper forearm mass. Grip the inner downward waves of bar.', cue: 'Squeeze at top',
                 target: 'Brachioradialis (Upper Forearm Mass Grid)',
                 setup: 'Stand holding an EZ curl bar with an overhand (pronated) grip at shoulder width.',
                 steps: ['Keep elbows tucked against sides.', 'Curl bar up toward shoulder line using top of forearm muscles.', 'Control the weight back down slowly to stop wrists from snapping.', 'Maintain high tension.']
               },
               { 
-                id: 't10', name: 'Wrist Curl Machine', sets: 3, reps: '15-20', rest: 60, note: 'Corewave custom machine. Locks forearms down for direct wrist flexor load.', cue: 'High reps, deep burn',
+                id: 't10', name: 'Wrist Curl Machine', sets: 3, reps: '15-20', rest: 60, note: '2xF Protocol. Locks forearms down for direct wrist flexor load.', cue: 'High reps, deep burn',
                 target: 'Wrist Flexor Complex (Lower Forearm Density)',
                 setup: 'Sit at machine, rest forearms flat on supporting pad with wrists hanging off edge, palms facing up.',
                 steps: ['Allow machine handle to roll down securely onto fingertips.', 'Curl fingers inward, then curl wrists upward fully contracting lower forearm.', 'Hold top squeeze for a fraction of a second.', 'Slowly roll weight back down down to finger ends.']
@@ -448,64 +474,64 @@
             ]
           },
           {
-            day: 3, name: 'Wednesday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: 'Hitting legs fresh for maximum power, followed by 3D cannonball delts.',
+            day: 3, name: 'Wednesday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: 'Execute 2xF Protocol: 1 Warmup set, then 2 sets to absolute mechanical failure.',
             exercises: [
               { 
-                id: 'w1', name: 'Hack Squat Machine', sets: 4, reps: '8-12', rest: 120, note: 'Deep range of motion, completely saves your lower back from heavy loading.', cue: 'Control the negative',
+                id: 'w1', name: 'Hack Squat Machine', sets: 3, reps: '8-12', rest: 120, note: '2xF Protocol (1 Warmup + 2x Failure). Deep range of motion, saves your lower back from heavy loading.', cue: 'Control the negative',
                 target: 'Vastus Lateralis (Outer Quad Sweep) & Glutes',
                 setup: 'Step into machine, position shoulders securely under pads, place feet shoulder-width on platform.',
                 steps: ['Release safety handles.', 'Descend slowly, tracking knees in line with toes until thighs pass parallel mark.', 'Pause briefly in deepest pocket to maximize stretch.', 'Drive upward explosively pressing through mid-foot without locking knees out.']
               },
               { 
-                id: 'w2', name: 'Leg Extension Machine', sets: 3, reps: '12-15', rest: 90, note: 'Point your toes slightly outward to target the teardrop muscle explicitly.', cue: 'Hard squeeze at top',
+                id: 'w2', name: 'Leg Extension Machine', sets: 3, reps: '12-15', rest: 90, note: '2xF Protocol. Point your toes slightly outward to target the teardrop muscle explicitly.', cue: 'Hard squeeze at top',
                 target: 'Vastus Medialis (Inner Quad Teardrop Muscle)',
                 setup: 'Sit back against pad. Align knee joint perfectly with machine rotating axis spin wheel.',
                 steps: ['Place ankles behind pad rollers.', 'Extend legs upward to absolute straight lockout.', 'Squeeze the teardrop muscle hard for 1 second at top.', 'Lower weight under strict control over 2-3 seconds down.']
               },
               { 
-                id: 'w3', name: 'Romanian Deadlifts', sets: 3, reps: '8-10', rest: 120, note: 'Focus on the hamstring stretch at the bottom. Push hips backward.', cue: 'Hinge at the hips',
-                target: 'Hamstring Complex & Glute-Ham Tie-In Frame',
-                setup: 'Stand tall holding a barbell or heavy dumbbells in front of thighs with straight posture.',
-                steps: ['Unlock knees slightly, lock them in that exact position.', 'Push hips backward as if trying to touch a wall behind you.', 'Lower weight down shins keeping bar path locked close to body.', 'Stop when a massive stretch is felt in hamstrings, drive hips forward to rise.']
+                id: 'w3', name: 'DB Bulgarian Split Squats', sets: 3, reps: '8-12', rest: 90, note: '2xF Protocol. Unilateral focus for deep quad/glute separation and mass. Brutal but aesthetic.', cue: 'Drive through front heel',
+                target: 'Glutes, Hamstrings & Quad Separation',
+                setup: 'Stand a few feet in front of a bench. Hold a dumbbell in each hand. Reach one foot back and rest the top of your foot on the bench.',
+                steps: ['Brace your core and keep your chest up.', 'Descend by bending your front knee and dropping your back knee toward the floor.', 'Stop when your front thigh is parallel to the floor.', 'Drive powerfully through your front heel to return to the starting position.']
               },
               { 
-                id: 'w4', name: 'Seated Leg Curl Machine', sets: 3, reps: '10-12', rest: 90, note: 'Strict hamstring isolation. Keep thigh pad pressed down tightly.', cue: 'Hold the contraction',
+                id: 'w4', name: 'Seated Leg Curl Machine', sets: 3, reps: '10-12', rest: 90, note: '2xF Protocol. Strict hamstring isolation. Keep thigh pad pressed down tightly.', cue: 'Hold the contraction',
                 target: 'Hamstring Hypertrophy (Biceps Femoris Isolation)',
                 setup: 'Sit in machine, place back flush to support, secure thigh pad down firmly to prevent lifting.',
                 steps: ['Place legs on top of ankle roller.', 'Curl legs downward and backward beneath seat completely.', 'Squeeze hamstrings hard at peak contraction.', 'Return legs slowly back up resisting the stack weight.']
               },
               { 
-                id: 'w5', name: 'Standing Calf Raise', sets: 4, reps: '12-15', rest: 60, note: 'Full stretch at the bottom, squeeze at the top. Use a 2-second stretch pause.', cue: 'Pause 2s at bottom',
+                id: 'w5', name: 'Standing Calf Raise', sets: 4, reps: '12-15', rest: 60, note: 'Calves need extra volume: 1 Warmup + 3 Working sets. Use a 2-second stretch pause.', cue: 'Pause 2s at bottom',
                 target: 'Gastrocnemius (Diamond Upper Calf Outlines)',
                 setup: 'Step onto block under shoulder pads. Keep torso upright and knees straight.',
                 steps: ['Drop heels far below block level to find absolute lowest stretch threshold.', 'Pause for 2 seconds to kill tendon bounce momentum.', 'Explode onto tiptoes flexing calves to max apex height.', 'Lower down slowly.']
               },
               { 
-                id: 'w6', name: 'Seated Calf Raise', sets: 4, reps: '15-20', rest: 60, note: 'Lower Calf (Soleus) development. Knee bend eliminates upper calf block.', cue: 'High reps, deep burn',
+                id: 'w6', name: 'Seated Calf Raise', sets: 4, reps: '15-20', rest: 60, note: '1 Warmup + 3 Working sets. Lower Calf (Soleus) development.', cue: 'High reps, deep burn',
                 target: 'Soleus Muscle (Lower Deep Calf Width Builder)',
                 setup: 'Sit in machine, place balls of feet on footrest, lock thigh pad firmly above knees.',
                 steps: ['Release safety mechanism weight arm.', 'Drop heels down to full stretch orientation.', 'Drive ankles upward horizontally pushing weight high.', 'Work through high volume rep layout to trigger deep expansion.']
               },
               { 
-                id: 'w7', name: 'Machine Shoulder Press', sets: 4, reps: '8-12', rest: 120, note: 'Heavy pressing for the Anterior/Front Delt. Highly stable alignment.', cue: 'Push to failure',
+                id: 'w7', name: 'Machine Shoulder Press', sets: 3, reps: '8-12', rest: 120, note: '2xF Protocol. Heavy pressing for the Anterior/Front Delt. Highly stable alignment.', cue: 'Push to failure',
                 target: 'Anterior Deltoid (Front Shoulder Boulder Mass)',
                 setup: 'Adjust machine seat so handles sit right near shoulder or lower chin height layout.',
                 steps: ['Grip handles securely, keep back pinned hard into backrest.', 'Drive handles vertically overhead until arms reach near full lockout.', 'Control weight down slowly matching negative path.', 'Do not bounce at base stack.']
               },
               { 
-                id: 'w8', name: 'Cable Lateral Raises', sets: 4, reps: '12-15', rest: 60, note: 'Constant tension for the Side Delts to build maximum V-taper width.', cue: 'Smooth consistent reps',
+                id: 'w8', name: 'Cable Lateral Raises', sets: 4, reps: '12-15', rest: 60, note: '1 Warmup + 3 Working Sets. Constant tension for the Side Delts to build maximum V-taper width.', cue: 'Smooth consistent reps',
                 target: 'Lateral Deltoid (Side Shoulder Width Caps)',
                 setup: 'Set low cable track. Reach across body to grab cable wire without attachments using opposite arm.',
                 steps: ['Stand tall, raise arm outwards to side line in a wide sweeping vector.', 'Keep wrist parallel to floor at peak.', 'Do not use body leaning momentum to throw cable up.', 'Return arm slowly keeping tension alive at base.']
               },
               { 
-                id: 'w9', name: 'Dumbbell Lateral Raises', sets: 3, reps: '15-20', rest: 45, note: 'Drop the weight, just focus on the burn to cap the shoulders out completely.', cue: 'Burnout sets',
+                id: 'w9', name: 'Dumbbell Lateral Raises', sets: 4, reps: '15-20', rest: 45, note: 'Spam to failure (1 Warmup + 3 Working Sets). Drop the weight, just focus on the burn to cap the shoulders out completely.', cue: 'Burnout sets',
                 target: 'Lateral Deltoid Caps (High Vol Density)',
                 setup: 'Grab light dumbbells by sides, stand with slight forward torso lean posture.',
                 steps: ['Raise weights out wide to sides in a full wing movement.', 'Lead with your elbows slightly.', 'Pour out pitchers at the top (pinkies high).', 'Perform fast mechanical drop sets to total failure.']
               },
               { 
-                id: 'w10', name: 'Reverse Pec Deck Flys', sets: 4, reps: '12-15', rest: 60, note: 'Posterior/Rear Delt isolation for a full 3D thick profile look from the side.', cue: 'Squeeze rear delts',
+                id: 'w10', name: 'Reverse Pec Deck Flys', sets: 4, reps: '12-15', rest: 60, note: '1 Warmup + 3 Working Sets. Posterior/Rear Delt isolation for a full 3D thick profile look from the side.', cue: 'Squeeze rear delts',
                 target: 'Posterior Deltoid (Rear Shoulder Cap Depth)',
                 setup: 'Sit facing inside of pec deck machine chest flat against pad. Grips aligned with shoulder points.',
                 steps: ['Pull handles backward horizontally in an arc utilizing rear shoulders.', 'Keep arms near straight with unlocked elbows.', 'Squeeze the rear delts hard at full retraction.', 'Avoid loading with mid-back traps.']
@@ -513,23 +539,22 @@
             ]
           },
           {
-            day: 4, name: 'Thursday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Upper chest shelf, maximum chest width, and heavy tricep mass.',
-            exercises: [] // Will mirror Day 1 dynamically in runtime architecture
+            day: 4, name: 'Thursday', focus: 'Chest & Triceps', type: 'Push Block', tip: 'Execute 2xF Protocol: 1 Warmup set, then 2 sets to absolute mechanical failure.',
+            exercises: []
           },
           {
-            day: 5, name: 'Friday', focus: 'Back & Biceps', type: 'Pull Block', tip: 'Raw pulling strength, lat sweep for the V-taper, and bicep peaks.',
-            exercises: [] // Will mirror Day 2 dynamically in runtime architecture
+            day: 5, name: 'Friday', focus: 'Back & Biceps', type: 'Pull Block', tip: 'Execute 2xF Protocol: 1 Warmup set, then 2 sets to absolute mechanical failure.',
+            exercises: []
           },
           {
-            day: 6, name: 'Saturday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: 'Hitting legs fresh for maximum power, followed by 3D cannonball delts.',
-            exercises: [] // Will mirror Day 3 dynamically in runtime architecture
+            day: 6, name: 'Saturday', focus: 'Legs & Shoulders', type: 'Gauntlet Block', tip: 'Execute 2xF Protocol: 1 Warmup set, then 2 sets to absolute mechanical failure.',
+            exercises: [] 
           },
           {
             day: 0, name: 'Sunday', focus: 'System Recovery', type: 'Rest', tip: 'Growth occurs during recovery. Focus on food and sleep.', exercises: []
           }
         ];
 
-        // Populate mirror days for 6-day split architecture
         WORKOUT_PLAN[3].exercises = WORKOUT_PLAN[0].exercises;
         WORKOUT_PLAN[4].exercises = WORKOUT_PLAN[1].exercises;
         WORKOUT_PLAN[5].exercises = WORKOUT_PLAN[2].exercises;
@@ -669,8 +694,7 @@
             const hardReset = (e) => {
                 triggerRipple(e);
                 AudioEngine.start();
-                try { localStorage.clear(); } catch(e) {}
-                window.location.reload();
+                forceSystemReset();
             };
 
             const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
@@ -831,7 +855,7 @@
                                     <div key={ex.id} 
                                         className={`relative overflow-hidden p-5 rounded-[32px] border transition-all duration-300 flex items-center justify-between shadow-lg ${allCompleted ? 'bg-black/50 border-white/5 opacity-60' : 'bg-[#111] border-white/10 hover:border-white/20'}`}>
                                         
-                                        {/* Main Execution Body (Clicking triggers Focus Panel) */}
+                                        {/* Main Execution Body */}
                                         <div onClick={(e) => { triggerRipple(e); AudioEngine.open(); updateState({ focusedExercise: exIndex }); }} className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer active-press">
                                             <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black font-space text-lg border transition-all ${allCompleted ? 'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/30 shadow-[0_0_15px_rgba(52,199,89,0.2)]' : 'bg-[#0A84FF]/10 text-[#0A84FF] border-[#0A84FF]/30'}`}>
                                                 {allCompleted ? <Check size={20} strokeWidth={3}/> : exIndex + 1}
